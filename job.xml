@@ -1,0 +1,2136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jobs xmlns="http://www.demandware.com/xml/impex/jobs/2015-07-01">
+    <job job-id="Job Feeds" priority="0">
+        <description/>
+        <parameters/>
+        <split sequential="false">
+            <contexts template-ref="template_66">
+                <context site-id="company"/>
+                <context site-id="company"/>
+            </contexts>
+            <flow-template template-id="template_66">
+                <step step-id="Product feed" type="custom.ProductFeedCSV" enforce-restart="false">
+                    <description/>
+                    <parameters>
+                        <parameter name="FileNamePattern">redirectsProducts_{{toLowerCase (underscoresToHyphens locale)}}.csv</parameter>
+                        <parameter name="Separator">,</parameter>
+                        <parameter name="TargetFolder">/feeds/akamai</parameter>
+                        <parameter name="WriteHeaders">true</parameter>
+                        <parameter name="RelativeURLs">true</parameter>
+                        <parameter name="IncludeDataWithEmptyURL">false</parameter>
+                        <parameter name="FeedFormat">Akamai</parameter>
+                        <parameter name="ImageViewType">hi-res</parameter>
+                    </parameters>
+                </step>
+            </flow-template>
+        </split>
+        <split sequential="false">
+            <contexts template-ref="template_64">
+                <context site-id="company"/>
+                <context site-id="company"/>
+            </contexts>
+            <flow-template template-id="template_64">
+                <step step-id="Category feed" type="custom.CategoryFeedCSV" enforce-restart="false">
+                    <description/>
+                    <parameters>
+                        <parameter name="FileNamePattern">redirectsCategories_{{toLowerCase (underscoresToHyphens locale)}}.csv</parameter>
+                        <parameter name="Separator">,</parameter>
+                        <parameter name="TargetFolder">/feeds/akamai</parameter>
+                        <parameter name="WriteHeaders">true</parameter>
+                        <parameter name="RelativeURLs">true</parameter>
+                        <parameter name="IncludeDataWithEmptyURL">false</parameter>
+                        <parameter name="FeedFormat">Akamai</parameter>
+                    </parameters>
+                </step>
+            </flow-template>
+        </split>
+        <flow>
+            <context site-id="Sites"/>
+            <step step-id="Split product feeds" type="ExecuteScriptModule" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="ExecuteScriptModule.Module">bc_wl_jobs/cartridge/scripts/executers/akamaiFeedSplitterCSV.js</parameter>
+                    <parameter name="ExecuteScriptModule.FunctionName">execute</parameter>
+                    <parameter name="ExecuteScriptModule.Transactional">false</parameter>
+                    <parameter name="LocalizedSource_en_CA">/IMPEX/feeds/akamai/redirectsProducts_en-ca.csv</parameter>
+                    <parameter name="LocalizedSource_fr_CA">/IMPEX/feeds/akamai/redirectsProducts_fr-ca.csv</parameter>
+                    <parameter name="WriteHeaders">true</parameter>
+                    <parameter name="HasHeader">true</parameter>
+                    <parameter name="LocalizedTargetFilePattern_en_CA">/IMPEX/feeds/akamai/en-ca-product-{{toLowerCase chunkName}}.csv</parameter>
+                    <parameter name="LocalizedTargetFilePattern_fr_CA">/IMPEX/feeds/akamai/fr-ca-product-{{toLowerCase chunkName}}.csv</parameter>
+                    <parameter name="LocalizedSource_en_US">/IMPEX/feeds/akamai/redirectsProducts_en-us.csv</parameter>
+                    <parameter name="LocalizedTargetFilePattern_en_US">/IMPEX/feeds/akamai/en-us-product-{{toLowerCase chunkName}}.csv</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <flow>
+            <context site-id="Sites"/>
+            <step step-id="Download all files to TMP and remove in the remote[CA]" type="custom.CSComponents.FtpDownload" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="ServiceID">akamai.feeds</parameter>
+                    <parameter name="FilePattern">.*</parameter>
+                    <parameter name="SourceFolder">redirects/company_CA/dev</parameter>
+                    <parameter name="TargetFolder">TMP/feeds/akamai</parameter>
+                    <parameter name="Recursive">false</parameter>
+                    <parameter name="DeleteRemoteFiles">true</parameter>
+                    <parameter name="NoFileFoundStatus">OK</parameter>
+                    <parameter name="IsDisabled">true</parameter>
+                </parameters>
+            </step>
+            <step step-id="Download all files to TMP and remove in the remote[US]" type="custom.CSComponents.FtpDownload" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="ServiceID">akamai.feeds</parameter>
+                    <parameter name="FilePattern">.*</parameter>
+                    <parameter name="SourceFolder">redirects/company_US/dev</parameter>
+                    <parameter name="TargetFolder">TMP/feeds/akamai</parameter>
+                    <parameter name="Recursive">false</parameter>
+                    <parameter name="NoFileFoundStatus">OK</parameter>
+                    <parameter name="IsDisabled">true</parameter>
+                </parameters>
+            </step>
+            <step step-id="Clear TMP" type="custom.CSComponents.CleanUpFiles" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="FilePattern">.*</parameter>
+                    <parameter name="WorkingFolder">/IMPEX/TMP/feeds/akamai</parameter>
+                    <parameter name="NoFileFoundStatus">OK</parameter>
+                    <parameter name="IsDisabled">true</parameter>
+                    <parameter name="DaysToKeep">1</parameter>
+                </parameters>
+                <rules>
+                    <on-exit status="ERROR">
+                        <continue/>
+                    </on-exit>
+                </rules>
+            </step>
+        </flow>
+        <flow>
+            <context site-id="Sites"/>
+            <step step-id="Upload feeds to Akamai[CA]" type="custom.CSComponents.FtpUpload" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="ServiceID">akamai.feeds</parameter>
+                    <parameter name="FilePattern">en-ca|fr-ca*\.*</parameter>
+                    <parameter name="SourceFolder">/feeds/akamai</parameter>
+                    <parameter name="TargetFolder">redirects/company_CA/dev</parameter>
+                    <parameter name="Recursive">false</parameter>
+                    <parameter name="NoFileFoundStatus">OK</parameter>
+                    <parameter name="IsDisabled">true</parameter>
+                </parameters>
+            </step>
+            <step step-id="Upload feeds to Akamai[US]" type="custom.CSComponents.FtpUpload" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="ServiceID">akamai.feeds</parameter>
+                    <parameter name="FilePattern">en-us*\.*</parameter>
+                    <parameter name="SourceFolder">/feeds/akamai</parameter>
+                    <parameter name="TargetFolder">redirects/company_US/dev</parameter>
+                    <parameter name="Recursive">false</parameter>
+                    <parameter name="NoFileFoundStatus">OK</parameter>
+                    <parameter name="IsDisabled">true</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <flow>
+            <context site-id="Sites"/>
+            <step step-id="Archive split files" type="custom.CSComponents.ZipFiles" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="SourceFolder">/feeds/akamai</parameter>
+                    <parameter name="FilePattern">.*</parameter>
+                    <parameter name="TargetFolder">/archive/feeds/akamai</parameter>
+                    <parameter name="ArchiveName">chunks-_now_.zip</parameter>
+                    <parameter name="RemoveFilesFromSourceFolder">true</parameter>
+                    <parameter name="RemoveSourceFolderAfterCompletion">false</parameter>
+                    <parameter name="NoFileFoundStatus">OK</parameter>
+                    <parameter name="IsDisabled">true</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <rules/>
+        <triggers>
+            <run-recurring enabled="true">
+                <recurrence>
+                    <date-from>2021-07-01Z</date-from>
+                    <start-time>13:01:55.000Z</start-time>
+                    <interval>1d</interval>
+                    <day-of-week>
+                        <weekday>Thursday</weekday>
+                        <weekday>Friday</weekday>
+                        <weekday>Saturday</weekday>
+                        <weekday>Sunday</weekday>
+                        <weekday>Tuesday</weekday>
+                        <weekday>Wednesday</weekday>
+                        <weekday>Monday</weekday>
+                    </day-of-week>
+                </recurrence>
+            </run-recurring>
+        </triggers>
+    </job>
+
+    <job job-id="RebuildURLs" priority="0">
+        <description/>
+        <parameters/>
+        <split sequential="false">
+            <flow>
+                <context site-id="company"/>
+                <template-ref template-id="template_40"/>
+            </flow>
+            <flow>
+                <context site-id="company"/>
+                <template-ref template-id="template_40"/>
+            </flow>
+            <flow-template template-id="template_40">
+                <step step-id="RebuildURLs" type="UpdateStorefrontURLs" enforce-restart="false">
+                    <description/>
+                    <parameters/>
+                </step>
+            </flow-template>
+        </split>
+        <rules/>
+        <triggers>
+            <run-once enabled="false">
+                <date>2018-06-25Z</date>
+                <time>05:38:35.000Z</time>
+            </run-once>
+        </triggers>
+    </job>
+
+    <job job-id="Reindex" priority="0">
+        <description/>
+        <parameters/>
+        <split sequential="false">
+            <flow>
+                <context site-id="company"/>
+                <template-ref template-id="template_45"/>
+            </flow>
+            <flow>
+                <context site-id="company"/>
+                <template-ref template-id="template_45"/>
+            </flow>
+            <flow-template template-id="template_45">
+                <step step-id="Reindex" type="SearchReindex" enforce-restart="false">
+                    <description/>
+                    <parameters>
+                        <parameter name="Product related search indexes">true</parameter>
+                        <parameter name="Active data search index">true</parameter>
+                        <parameter name="Content search index">true</parameter>
+                        <parameter name="Indexer Type">Full Index Rebuild</parameter>
+                    </parameters>
+                </step>
+            </flow-template>
+        </split>
+        <rules/>
+        <triggers>
+            <run-once enabled="false">
+                <date>2018-06-25Z</date>
+                <time>05:36:56.000Z</time>
+            </run-once>
+        </triggers>
+    </job>
+
+    <job job-id="CyberSource: Decision Manager Order Update" priority="0">
+        <description>Update unconfirmed orders based on Accept / Reject decisions made in CS
+            Business Center.</description>
+        <parameters/>
+        <split sequential="false">
+            <flow>
+                <context site-id="RefArch"/>
+                <template-ref template-id="template_91"/>
+            </flow>
+            <flow-template template-id="template_91">
+                <step step-id="UpdateOrderStatus" type="ExecuteScriptModule" enforce-restart="false">
+                    <description>Update unconfirmed orders based on Accept / Reject decisions made in CS Business Center.</description>
+                    <parameters>
+                        <parameter name="ExecuteScriptModule.Module">int_cybersource_sfra/cartridge/scripts/jobs/DMOrderStatusUpdate.js</parameter>
+                        <parameter name="ExecuteScriptModule.FunctionName">orderStatusUpdate</parameter>
+                        <parameter name="ExecuteScriptModule.Transactional">false</parameter>
+                        <parameter name="MerchantId"/>
+                        <parameter name="SAFlexKeyID"/>
+                        <parameter name="SAFlexSharedSecret"/>
+                    </parameters>
+                </step>
+            </flow-template>
+        </split>
+        <rules/>
+        <triggers>
+            <run-once enabled="true">
+                <date>2016-12-29Z</date>
+                <time>11:30:03.000Z</time>
+            </run-once>
+        </triggers>
+    </job>
+
+    <job job-id="ImportReviewRatings" priority="0">
+        <description>Power review download feed and import the feed on product level</description>
+        <parameters/>
+        <flow>
+            <context site-id="company"/>
+            <step step-id="PowerReviewFtpDownloadFile" type="custom.CSComponents.FtpDownload" enforce-restart="false">
+                <description>Power Review Ftp Download File</description>
+                <parameters>
+                    <parameter name="ServiceID">powerreviews.sftp</parameter>
+                    <parameter name="FilePattern">pwr.zip</parameter>
+                    <parameter name="SourceFolder">/data</parameter>
+                    <parameter name="TargetFolder">src/pwr/company</parameter>
+                    <parameter name="Recursive">false</parameter>
+                    <parameter name="NoFileFoundStatus">ERROR</parameter>
+                    <parameter name="IsDisabled">false</parameter>
+                </parameters>
+                <rules>
+                    <on-exit status="ERROR,NO_FILE_FOUND">
+                        <stop-job/>
+                    </on-exit>
+                </rules>
+            </step>
+        </flow>
+        <flow>
+            <context site-id="Sites"/>
+            <step step-id="powerreview-unZipFile" type="custom.CSComponents.UnzipFiles" enforce-restart="false">
+                <description>powerreview unZip File pwr</description>
+                <parameters>
+                    <parameter name="SourceFolder">src/pwr/company</parameter>
+                    <parameter name="FilePattern">.*\.zip</parameter>
+                    <parameter name="TargetFolder">src/pwr/company/process</parameter>
+                    <parameter name="RemoveArchivesAfterCompletion">true</parameter>
+                    <parameter name="UseArchiveNameAsFolder">true</parameter>
+                    <parameter name="NoFileFoundStatus">OK</parameter>
+                </parameters>
+                <rules>
+                    <on-exit status="ERROR,NO_FILE_FOUND">
+                        <stop-job/>
+                    </on-exit>
+                </rules>
+            </step>
+        </flow>
+        <flow>
+            <context site-id="company"/>
+            <step step-id="powerreview-importScript" type="ExecuteScriptModule" enforce-restart="false">
+                <description>Power review import rating and count</description>
+                <parameters>
+                    <parameter name="ExecuteScriptModule.Module">int_powerreviews/cartridge/scripts/jobs/ImportRatingReview</parameter>
+                    <parameter name="ExecuteScriptModule.FunctionName">Process</parameter>
+                    <parameter name="ExecuteScriptModule.Transactional">false</parameter>
+                    <parameter name="impexPath">src/pwr/company/process/pwr</parameter>
+                    <parameter name="catalogId">company-master-catalog</parameter>
+                    <parameter name="hashValue">i4cte3g2</parameter>
+                    <parameter name="insideFolder">rawdata</parameter>
+                    <parameter name="fileToFetch">review_data_summary.xml</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <rules>
+            <on-running runtime-threshold="60m" enabled="true">
+                <mark-job-as-hanging/>
+                <send-mail>
+                    <from>donotreply@demandware.net</from>
+                    <to>demo@company.com</to>
+                </send-mail>
+            </on-running>
+            <on-retry enabled="true">
+                <send-mail>
+                    <from>donotreply@demandware.net</from>
+                    <to>demo@company.com</to>
+                </send-mail>
+            </on-retry>
+            <on-exit status="OK,ERROR" enabled="true">
+                <send-mail>
+                    <from>donotreply@demandware.net</from>
+                    <to>demo@company.com</to>
+                </send-mail>
+            </on-exit>
+        </rules>
+        <triggers>
+            <run-once enabled="false">
+                <date>2021-01-15Z</date>
+                <time>13:53:29.000Z</time>
+            </run-once>
+        </triggers>
+    </job>
+
+    <job job-id="EmployeeToStoreRelation" priority="0">
+        <description/>
+        <parameters/>
+        <flow>
+            <context site-id="company"/>
+            <step step-id="EmployeeToStoreRelation" type="custom.EmployeeToStoreRelation" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="SourceFolder">upload/employeeRelation</parameter>
+                    <parameter name="ArchiveFolder">archive/employeeRelation</parameter>
+                    <parameter name="DisableArchive">false</parameter>
+                    <parameter name="ArchiveExtension">.zip</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <rules/>
+        <triggers>
+            <run-once enabled="false">
+                <date>2021-07-19Z</date>
+                <time>10:37:19.000Z</time>
+            </run-once>
+        </triggers>
+    </job>
+
+    <job job-id="Monetate Feeds" priority="0">
+        <parameters/>
+        <flow>
+            <context site-id="company"/>
+            <step step-id="Product feed" type="custom.ProductFeedCSV" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="FileNamePattern">{{filePrefix}}-full-monetate-product-{{hyphensToUnderscores locale}}.csv</parameter>
+                    <parameter name="Separator">,</parameter>
+                    <parameter name="TargetFolder">/feeds/monetate</parameter>
+                    <parameter name="WriteHeaders">true</parameter>
+                    <parameter name="RelativeURLs">false</parameter>
+                    <parameter name="IncludeDataWithEmptyURL">false</parameter>
+                    <parameter name="FeedFormat">Monetate</parameter>
+                    <parameter name="ImageViewType">hi-res</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <flow>
+            <context site-id="company"/>
+            <step step-id="Upload feed to Monetate" type="custom.CSComponents.FtpUpload" enforce-restart="false">
+                <description>monetate feed upload to ftp</description>
+                <parameters>
+                    <parameter name="ServiceID">monetateFeed.uploadFtp</parameter>
+                    <parameter name="SourceFolder">/feeds/monetate</parameter>
+                    <parameter name="TargetFolder">/upload</parameter>
+                    <parameter name="Recursive">false</parameter>
+                    <parameter name="NoFileFoundStatus">ERROR</parameter>
+                </parameters>
+                <rules>
+                    <on-exit status="ERROR">
+                        <stop-job/>
+                    </on-exit>
+                </rules>
+            </step>
+        </flow>
+        <rules>
+            <on-running runtime-threshold="60m" enabled="false">
+                <mark-job-as-hanging/>
+                <send-mail>
+                    <from>donotreply@demandware.net</from>
+                    <to>demo@company.com</to>
+                </send-mail>
+            </on-running>
+            <on-retry enabled="false">
+                <send-mail>
+                    <from>donotreply@demandware.net</from>
+                    <to>demo@company.com</to>
+                </send-mail>
+            </on-retry>
+            <on-exit status="ERROR" enabled="false">
+                <send-mail>
+                    <from>donotreply@demandware.net</from>
+                    <to>demo@company.com</to>
+                </send-mail>
+            </on-exit>
+        </rules>
+        <triggers>
+            <run-once enabled="true">
+                <date>2019-07-09Z</date>
+                <time>21:16:52.000Z</time>
+            </run-once>
+        </triggers>
+    </job>
+
+    <job job-id="Bloomreach Feed Export" priority="0">
+        <description/>
+        <parameters/>
+        <flow>
+            <context site-id="company"/>
+            <step step-id="BR_Feed_en_CA" type="ExecuteScriptModule" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="ExecuteScriptModule.Module">int_bloomreach_sfra/cartridge/controllers/BloomReachFeed.js</parameter>
+                    <parameter name="ExecuteScriptModule.FunctionName">Start</parameter>
+                    <parameter name="ExecuteScriptModule.Transactional">false</parameter>
+                    <parameter name="days">30</parameter>
+                    <parameter name="minutes">0</parameter>
+                    <parameter name="folderName">src/bloomreach</parameter>
+                    <parameter name="fileName">ProductCatalog_today_</parameter>
+                    <parameter name="locale">en_CA</parameter>
+                    <parameter name="includeMasters">no</parameter>
+                </parameters>
+            </step>
+            <step step-id="BR_Feed_fr_CA" type="ExecuteScriptModule" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="ExecuteScriptModule.Module">int_bloomreach_sfra/cartridge/controllers/BloomReachFeed.js</parameter>
+                    <parameter name="ExecuteScriptModule.FunctionName">Start</parameter>
+                    <parameter name="ExecuteScriptModule.Transactional">false</parameter>
+                    <parameter name="days">30</parameter>
+                    <parameter name="minutes">0</parameter>
+                    <parameter name="folderName">src/bloomreach</parameter>
+                    <parameter name="fileName">ProductCatalog_today_</parameter>
+                    <parameter name="locale">fr_CA</parameter>
+                    <parameter name="includeMasters">no</parameter>
+                </parameters>
+            </step>
+            <step step-id="BR_Upload" type="custom.CSComponents.FtpUpload" enforce-restart="false">
+                <description>Uploading Product XML Feed to Bloomreach</description>
+                <parameters>
+                    <parameter name="ServiceID">bloomReach.ftp.sendFile</parameter>
+                    <parameter name="SourceFolder">src/bloomreach</parameter>
+                    <parameter name="TargetFolder">.</parameter>
+                    <parameter name="Recursive">false</parameter>
+                    <parameter name="NoFileFoundStatus">OK</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <rules/>
+        <triggers>
+            <run-once enabled="false">
+                <date>2017-07-11Z</date>
+                <time>17:32:04.000Z</time>
+            </run-once>
+        </triggers>
+    </job>
+
+    <job job-id="TNF-PCM-MasterCatalog-Import" priority="0">
+        <description/>
+        <parameters/>
+        <flow>
+            <context site-id="Sites"/>
+            <step step-id="DownloadMasterCatalogsFromSFTP" type="custom.CSComponents.FtpDownload" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="ServiceID">tnf-catalog-sftp-user</parameter>
+                    <parameter name="FilePattern">.*catalog_master*.*\.xml</parameter>
+                    <parameter name="SourceFolder">/</parameter>
+                    <parameter name="TargetFolder">src/feeds/catalog/tnf-demo</parameter>
+                    <parameter name="Recursive">false</parameter>
+                    <parameter name="DeleteRemoteFiles">false</parameter>
+                    <parameter name="NoFileFoundStatus">OK</parameter>
+                </parameters>
+            </step>
+            <step step-id="ImportMasterCatalog" type="ImportCatalog" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="WorkingFolder">feeds/catalog/tnf-demo</parameter>
+                    <parameter name="FileNamePattern">.*catalog_master*.*\.xml</parameter>
+                    <parameter name="NoFilesFoundHandling">OK</parameter>
+                    <parameter name="ImportMode">Merge</parameter>
+                    <parameter name="ImportFailedHandling">ERROR</parameter>
+                    <parameter name="AfterImportFileHandling">Keep</parameter>
+                    <parameter name="ArchiveFolder">archive</parameter>
+                </parameters>
+            </step>
+            <step step-id="ImportMasterCatalogPostProcess" type="custom.ImportCatalogPostProcess" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="disabled">false</parameter>
+                    <parameter name="workingFolder">src/feeds/catalog/tnf-demo</parameter>
+                    <parameter name="filePattern">.*catalog_master*.*\.xml</parameter>
+                    <parameter name="filePathPattern">src/feeds/catalog/tnf-demo/postprocess/tnf-demo-storefront-navigation-catalog-_now_.xml</parameter>
+                    <parameter name="catalogID">tnf-demo-storefront</parameter>
+                    <parameter name="defaultCategoryInStock">root</parameter>
+                    <parameter name="defaultCategoryCustoms">customs-bundles</parameter>
+                    <parameter name="productTypesForProcessing">master</parameter>
+                </parameters>
+            </step>
+            <step step-id="ImportNavigationCatalog" type="ImportCatalog" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="WorkingFolder">feeds/catalog/tnf-demo/postprocess</parameter>
+                    <parameter name="FileNamePattern">.*navigation-catalog*.*\.xml</parameter>
+                    <parameter name="NoFilesFoundHandling">OK</parameter>
+                    <parameter name="ImportMode">Merge</parameter>
+                    <parameter name="ImportFailedHandling">ERROR</parameter>
+                    <parameter name="AfterImportFileHandling">Archive Zipped</parameter>
+                    <parameter name="ArchiveFolder">src/feeds/catalog/tnf-demo/archive</parameter>
+                </parameters>
+            </step>
+            <step step-id="ArchiveMasterCatalog" type="custom.CSComponents.ZipFiles" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="SourceFolder">src/feeds/catalog/tnf-demo</parameter>
+                    <parameter name="FilePattern">.*catalog_master*.*\.xml</parameter>
+                    <parameter name="TargetFolder">src/feeds/catalog/tnf-demo/archive</parameter>
+                    <parameter name="ArchiveName">tnf-demo-storefront-master-catalog-_now_</parameter>
+                    <parameter name="RemoveFilesFromSourceFolder">true</parameter>
+                    <parameter name="RemoveSourceFolderAfterCompletion">false</parameter>
+                    <parameter name="NoFileFoundStatus">OK</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <flow>
+            <context site-id="Sites"/>
+            <step step-id="Sales Products Map" type="custom.CSComponents.SaleProductsMap" enforce-restart="false">
+                <description/>
+                <parameters/>
+            </step>
+        </flow>
+        <flow>
+            <context site-id="tnf-ca"/>
+            <step step-id="Category Page Url Update en_CA" type="ExecuteScriptModule" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="ExecuteScriptModule.Module">bc_wl_jobs/cartridge/scripts/jobsteps/CategoryPageURLUpdateXML.js</parameter>
+                    <parameter name="ExecuteScriptModule.FunctionName">generateXML</parameter>
+                    <parameter name="ExecuteScriptModule.Transactional">false</parameter>
+                    <parameter name="siteID">tnf-ca</parameter>
+                    <parameter name="catalogID">tnf-demo-storefront</parameter>
+                    <parameter name="languageLocale">en_CA</parameter>
+                    <parameter name="filePathPattern">src/catalog/catalogCategoryExport_en-CA_.xml</parameter>
+                </parameters>
+            </step>
+            <step step-id="Category Page Url Update fr_CA" type="ExecuteScriptModule" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="ExecuteScriptModule.Module">bc_wl_jobs/cartridge/scripts/jobsteps/CategoryPageURLUpdateXML.js</parameter>
+                    <parameter name="ExecuteScriptModule.FunctionName">generateXML</parameter>
+                    <parameter name="ExecuteScriptModule.Transactional">false</parameter>
+                    <parameter name="siteID">tnf-ca</parameter>
+                    <parameter name="catalogID">tnf-demo-storefront</parameter>
+                    <parameter name="filePathPattern">src/catalog/catalogCategoryExport_fr-CA_.xml</parameter>
+                    <parameter name="languageLocale">fr_CA</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <flow>
+            <context site-id="tnf-us"/>
+            <step step-id="Category Page Url Update en_US" type="ExecuteScriptModule" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="ExecuteScriptModule.Module">bc_wl_jobs/cartridge/scripts/jobsteps/CategoryPageURLUpdateXML.js</parameter>
+                    <parameter name="ExecuteScriptModule.FunctionName">generateXML</parameter>
+                    <parameter name="ExecuteScriptModule.Transactional">false</parameter>
+                    <parameter name="siteID">tnf-us</parameter>
+                    <parameter name="catalogID">tnf-demo-storefront</parameter>
+                    <parameter name="languageLocale">en_US</parameter>
+                    <parameter name="filePathPattern">src/catalog/catalogCategoryExport_en-US_.xml</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <flow>
+            <context site-id="Sites"/>
+            <step step-id="Import Site Catalog" type="ImportCatalog" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="WorkingFolder">catalog/</parameter>
+                    <parameter name="FileNamePattern">catalogCategoryExport*.*\.xml</parameter>
+                    <parameter name="NoFilesFoundHandling">OK</parameter>
+                    <parameter name="ImportMode">Merge</parameter>
+                    <parameter name="ImportFailedHandling">WARN</parameter>
+                    <parameter name="AfterImportFileHandling">Archive</parameter>
+                    <parameter name="ArchiveFolder">archive</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <rules/>
+        <triggers>
+            <run-once enabled="false">
+                <date>2021-06-08Z</date>
+                <time>19:03:32.000Z</time>
+            </run-once>
+        </triggers>
+    </job>
+    
+    <job job-id="TNF Bloomreach Feed Export" priority="0">
+        <description/>
+        <parameters/>
+        <flow>
+            <context site-id="tnf-ca"/>
+            <step step-id="BR_Feed_en_CA" type="ExecuteScriptModule" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="ExecuteScriptModule.Module">int_bloomreach_sfra/cartridge/controllers/BloomReachFeed.js</parameter>
+                    <parameter name="ExecuteScriptModule.FunctionName">Start</parameter>
+                    <parameter name="ExecuteScriptModule.Transactional">false</parameter>
+                    <parameter name="days">30</parameter>
+                    <parameter name="minutes">0</parameter>
+                    <parameter name="folderName">src/bloomreach/tnf</parameter>
+                    <parameter name="fileName">ProductCatalog_today_</parameter>
+                    <parameter name="locale">en_CA</parameter>
+                    <parameter name="includeMasters">yes</parameter>
+                    <parameter name="brand">TNF</parameter>
+                </parameters>
+            </step>
+            <step step-id="BR_Feed_fr_CA" type="ExecuteScriptModule" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="ExecuteScriptModule.Module">int_bloomreach_sfra/cartridge/controllers/BloomReachFeed.js</parameter>
+                    <parameter name="ExecuteScriptModule.FunctionName">Start</parameter>
+                    <parameter name="ExecuteScriptModule.Transactional">false</parameter>
+                    <parameter name="days">30</parameter>
+                    <parameter name="minutes">0</parameter>
+                    <parameter name="folderName">src/bloomreach/tnf</parameter>
+                    <parameter name="fileName">ProductCatalog_today_</parameter>
+                    <parameter name="locale">fr_CA</parameter>
+                    <parameter name="includeMasters">yes</parameter>
+                    <parameter name="brand">TNF</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <flow>
+            <context site-id="tnf-us"/>
+            <step step-id="BR_Feed_en_US" type="ExecuteScriptModule" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="ExecuteScriptModule.Module">int_bloomreach_sfra/cartridge/controllers/BloomReachFeed.js</parameter>
+                    <parameter name="ExecuteScriptModule.FunctionName">Start</parameter>
+                    <parameter name="ExecuteScriptModule.Transactional">false</parameter>
+                    <parameter name="days">30</parameter>
+                    <parameter name="minutes">0</parameter>
+                    <parameter name="folderName">src/bloomreach/tnf</parameter>
+                    <parameter name="fileName">ProductCatalog_today_</parameter>
+                    <parameter name="locale">en_US</parameter>
+                    <parameter name="includeMasters">yes</parameter>
+                    <parameter name="brand">TNF</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <flow>
+            <context site-id="Sites"/>
+            <step step-id="BR_Upload" type="custom.CSComponents.FtpUpload" enforce-restart="false">
+                <description>Uploading Product XML Feed to Bloomreach</description>
+                <parameters>
+                    <parameter name="ServiceID">bloomReach.sftp.sendFile.tnf</parameter>
+                    <parameter name="KeyAlias">bloomreach.sftp.tnf</parameter>
+                    <parameter name="SourceFolder">src/bloomreach/tnf</parameter>
+                    <parameter name="TargetFolder">feed</parameter>
+                    <parameter name="Recursive">false</parameter>
+                    <parameter name="NoFileFoundStatus">ERROR</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <rules/>
+        <triggers>
+            <run-once enabled="false">
+                <date>2017-07-11Z</date>
+                <time>17:32:04.000Z</time>
+            </run-once>
+        </triggers>
+    </job>
+
+    <job job-id="Bloomreach Feed Export Hourly" priority="0">
+        <description/>
+        <parameters/>
+        <flow>
+            <context site-id="company"/>
+            <step step-id="BR_Feed_en_CA" type="ExecuteScriptModule" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="ExecuteScriptModule.Module">int_bloomreach_sfra/cartridge/controllers/BloomReachFeed.js</parameter>
+                    <parameter name="ExecuteScriptModule.FunctionName">Start</parameter>
+                    <parameter name="ExecuteScriptModule.Transactional">false</parameter>
+                    <parameter name="days">0</parameter>
+                    <parameter name="minutes">60</parameter>
+                    <parameter name="folderName">src/bloomreach</parameter>
+                    <parameter name="fileName">ProductCatalog_today_</parameter>
+                    <parameter name="locale">en_CA</parameter>
+                    <parameter name="includeMasters">no</parameter>
+                </parameters>
+            </step>
+            <step step-id="BR_Feed_fr_CA" type="ExecuteScriptModule" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="ExecuteScriptModule.Module">int_bloomreach_sfra/cartridge/controllers/BloomReachFeed.js</parameter>
+                    <parameter name="ExecuteScriptModule.FunctionName">Start</parameter>
+                    <parameter name="ExecuteScriptModule.Transactional">false</parameter>
+                    <parameter name="days">0</parameter>
+                    <parameter name="minutes">60</parameter>
+                    <parameter name="folderName">src/bloomreach</parameter>
+                    <parameter name="fileName">ProductCatalog_today_</parameter>
+                    <parameter name="locale">fr_CA</parameter>
+                    <parameter name="includeMasters">no</parameter>
+                </parameters>
+            </step>
+            <step step-id="BR_Upload" type="custom.CSComponents.FtpUpload" enforce-restart="false">
+                <description>Uploading Product XML Feed to Bloomreach</description>
+                <parameters>
+                    <parameter name="ServiceID">bloomReach.ftp.sendFile</parameter>
+                    <parameter name="SourceFolder">src/bloomreach</parameter>
+                    <parameter name="TargetFolder">.</parameter>
+                    <parameter name="Recursive">false</parameter>
+                    <parameter name="NoFileFoundStatus">OK</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <rules/>
+        <triggers>
+            <run-once enabled="false">
+                <date>2017-07-11Z</date>
+                <time>17:32:04.000Z</time>
+            </run-once>
+        </triggers>
+    </job>
+
+    <job job-id="PCM-MasterCatalog-Import" priority="0">
+        <description/>
+        <parameters/>
+        <flow>
+            <context site-id="Sites"/>
+            <step step-id="DownloadMasterCatalogsFromSFTP" type="custom.CSComponents.FtpDownload" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="ServiceID">download.mulesoft.sftp</parameter>
+                    <parameter name="FilePattern">.*catalog_master*.*\.xml</parameter>
+                    <parameter name="SourceFolder">qa/Catalog</parameter>
+                    <parameter name="TargetFolder">src/feeds/catalog/company-demo</parameter>
+                    <parameter name="Recursive">false</parameter>
+                    <parameter name="DeleteRemoteFiles">true</parameter>
+                    <parameter name="NoFileFoundStatus">OK</parameter>
+                    <parameter name="IsDisabled">false</parameter>
+                </parameters>
+            </step>
+            <step step-id="ImportMasterCatalog" type="ImportCatalog" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="WorkingFolder">feeds/catalog/company-demo</parameter>
+                    <parameter name="FileNamePattern">.*catalog_master*.*\.xml</parameter>
+                    <parameter name="NoFilesFoundHandling">OK</parameter>
+                    <parameter name="ImportMode">Merge</parameter>
+                    <parameter name="ImportFailedHandling">ERROR</parameter>
+                    <parameter name="AfterImportFileHandling">Keep</parameter>
+                </parameters>
+            </step>
+            <step step-id="ImportMasterCatalogPostProcess" type="custom.ImportCatalogPostProcess" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="disabled">false</parameter>
+                    <parameter name="workingFolder">src/feeds/catalog/company-demo</parameter>
+                    <parameter name="filePattern">.*catalog_master*.*\.xml</parameter>
+                    <parameter name="filePathPattern">src/feeds/catalog/company-demo/postprocess/company-demo-storefront-navigation-catalog-_now_.xml</parameter>
+                    <parameter name="catalogID">company-demo-storefront</parameter>
+                    <parameter name="defaultCategoryInStock">root</parameter>
+                    <parameter name="defaultCategoryCustoms">9999</parameter>
+                    <parameter name="rootCategoryAssignmentLevelMaster"></parameter>
+                    <parameter name="rootCategoryAssignmentLevelGroup"></parameter>
+                </parameters>
+            </step>
+            <step step-id="ImportNavigationCatalog" type="ImportCatalog" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="WorkingFolder">feeds/catalog/company-demo/postprocess</parameter>
+                    <parameter name="FileNamePattern">.*navigation-catalog*.*\.xml</parameter>
+                    <parameter name="NoFilesFoundHandling">OK</parameter>
+                    <parameter name="ImportMode">Merge</parameter>
+                    <parameter name="ImportFailedHandling">ERROR</parameter>
+                    <parameter name="AfterImportFileHandling">Archive Zipped</parameter>
+                    <parameter name="ArchiveFolder">src/feeds/catalog/company-demo/archive</parameter>
+                </parameters>
+            </step>
+            <step step-id="ArchiveMasterCatalog" type="custom.CSComponents.ZipFiles" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="SourceFolder">src/feeds/catalog/company-demo</parameter>
+                    <parameter name="FilePattern">.*catalog_master*.*\.xml</parameter>
+                    <parameter name="TargetFolder">src/feeds/catalog/company-demo/archive</parameter>
+                    <parameter name="ArchiveName">company-demo-storefront-master-catalog-_now_</parameter>
+                    <parameter name="RemoveFilesFromSourceFolder">true</parameter>
+                    <parameter name="RemoveSourceFolderAfterCompletion">false</parameter>
+                    <parameter name="NoFileFoundStatus">OK</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <flow>
+            <context site-id="company"/>
+            <step step-id="PopulateCustomProductsInventory[CA]" type="custom.PopulateCustomProductsInventory" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="FilePathPattern">src/feeds/catalog/company-demo/postprocess/_siteid_-inventory-list-_now_.xml</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <flow>
+            <context site-id="company"/>
+            <step step-id="PopulateCustomProductsInventory[US]" type="custom.PopulateCustomProductsInventory" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="FilePathPattern">src/feeds/catalog/company-demo/postprocess/_siteid_-inventory-list-_now_.xml</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <flow>
+            <context site-id="Sites"/>
+            <step step-id="ImportInventoryLists" type="ImportInventoryLists" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="WorkingFolder">feeds/catalog/company-demo/postprocess</parameter>
+                    <parameter name="FileNamePattern">.*inventory-list*.*\.xml</parameter>
+                    <parameter name="NoFilesFoundHandling">OK</parameter>
+                    <parameter name="ImportMode">Merge</parameter>
+                    <parameter name="ImportFailedHandling">ERROR</parameter>
+                    <parameter name="AfterImportFileHandling">Archive Zipped</parameter>
+                    <parameter name="ArchiveFolder">src/feeds/catalog/company-demo/archive</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <split sequential="false">
+            <contexts template-ref="template_197">
+                <context site-id="company"/>
+                <context site-id="company"/>
+            </contexts>
+            <flow-template template-id="template_197">
+                <step step-id="SaleProductsMap" type="custom.CSComponents.SaleProductsMap" enforce-restart="false">
+                    <description/>
+                    <parameters/>
+                </step>
+            </flow-template>
+        </split>
+        <flow>
+            <context site-id="company"/>
+            <step step-id="Category Page Url Update en_CA" type="ExecuteScriptModule" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="ExecuteScriptModule.Module">bc_wl_jobs/cartridge/scripts/jobsteps/CategoryPageURLUpdateXML.js</parameter>
+                    <parameter name="ExecuteScriptModule.FunctionName">generateXML</parameter>
+                    <parameter name="ExecuteScriptModule.Transactional">false</parameter>
+                    <parameter name="siteID">company-ca</parameter>
+                    <parameter name="catalogID">company-demo-storefront</parameter>
+                    <parameter name="languageLocale">en_CA</parameter>
+                    <parameter name="filePathPattern">src/catalog/catalogCategoryExport_en-CA_.xml</parameter>
+                </parameters>
+            </step>
+            <step step-id="Category Page Url Update fr_CA" type="ExecuteScriptModule" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="ExecuteScriptModule.Module">bc_wl_jobs/cartridge/scripts/jobsteps/CategoryPageURLUpdateXML.js</parameter>
+                    <parameter name="ExecuteScriptModule.FunctionName">generateXML</parameter>
+                    <parameter name="ExecuteScriptModule.Transactional">false</parameter>
+                    <parameter name="siteID">company</parameter>
+                    <parameter name="catalogID">company-demo-storefront</parameter>
+                    <parameter name="filePathPattern">src/catalog/catalogCategoryExport_fr-CA_.xml</parameter>
+                    <parameter name="languageLocale">fr_CA</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <flow>
+            <context site-id="company"/>
+            <step step-id="Category Page Url Update en_US" type="ExecuteScriptModule" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="ExecuteScriptModule.Module">bc_wl_jobs/cartridge/scripts/jobsteps/CategoryPageURLUpdateXML.js</parameter>
+                    <parameter name="ExecuteScriptModule.FunctionName">generateXML</parameter>
+                    <parameter name="ExecuteScriptModule.Transactional">false</parameter>
+                    <parameter name="siteID">company</parameter>
+                    <parameter name="catalogID">company-demo-storefront</parameter>
+                    <parameter name="filePathPattern">src/catalog/catalogCategoryExport_en-US_.xml</parameter>
+                    <parameter name="languageLocale">en_US</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <flow>
+            <context site-id="Sites"/>
+            <step step-id="Import Site Catalog" type="ImportCatalog" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="WorkingFolder">catalog/</parameter>
+                    <parameter name="FileNamePattern">catalogCategoryExport*.*\.xml</parameter>
+                    <parameter name="NoFilesFoundHandling">OK</parameter>
+                    <parameter name="ImportMode">Merge</parameter>
+                    <parameter name="ImportFailedHandling">WARN</parameter>
+                    <parameter name="AfterImportFileHandling">Archive</parameter>
+                    <parameter name="ArchiveFolder">archive</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <rules/>
+        <triggers>
+            <run-once enabled="false">
+                <date>2021-02-25Z</date>
+                <time>08:46:51.000Z</time>
+            </run-once>
+        </triggers>
+    </job>
+
+    <job job-id="Blueconic - Product Feed Export" priority="0">
+        <description/>
+        <parameters/>
+        <split sequential="false">
+            <contexts template-ref="template_42">
+                <context site-id="company"/>
+                <context site-id="company"/>
+            </contexts>
+            <flow-template template-id="template_42">
+                <step step-id="Generate product feed" type="custom.ProductFeedCSV" enforce-restart="false">
+                    <description/>
+                    <parameters>
+                        <parameter name="FileNamePattern">{{toUpperCase brand}}-{{toUpperCase country}}_PRODUCT_{{locale}}_{{date}}.txt</parameter>
+                        <parameter name="Separator">|</parameter>
+                        <parameter name="TargetFolder">/feeds/product</parameter>
+                        <parameter name="WriteHeaders">true</parameter>
+                        <parameter name="RelativeURLs">false</parameter>
+                        <parameter name="IncludeDataWithEmptyURL">false</parameter>
+                        <parameter name="FeedFormat">Blueconic</parameter>
+                        <parameter name="ImageViewType">hi-res</parameter>
+                    </parameters>
+                    <rules>
+                        <on-exit status="ERROR">
+                            <stop-job/>
+                        </on-exit>
+                    </rules>
+                </step>
+            </flow-template>
+        </split>
+        <flow>
+            <context site-id="Sites"/>
+            <step step-id="company CA Upload to CDP" type="custom.CSComponents.FtpUpload" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="ServiceID">sftp-company-aws-cdp</parameter>
+                    <parameter name="FilePattern">company_PRODUCT.*\.txt</parameter>
+                    <parameter name="SourceFolder">feeds/product</parameter>
+                    <parameter name="TargetFolder">env_DEV/outbound</parameter>
+                    <parameter name="Recursive">false</parameter>
+                    <parameter name="NoFileFoundStatus">OK</parameter>
+                </parameters>
+            </step>
+            <step step-id="company CA Upload to SFMC" type="custom.CSComponents.FtpUpload" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="ServiceID">sftp-company-aws-sfmc</parameter>
+                    <parameter name="FilePattern">company_PRODUCT.*\.txt</parameter>
+                    <parameter name="SourceFolder">feeds/product</parameter>
+                    <parameter name="TargetFolder">env_DEV/outbound</parameter>
+                    <parameter name="Recursive">false</parameter>
+                    <parameter name="NoFileFoundStatus">OK</parameter>
+                </parameters>
+            </step>
+            <step step-id="company US Upload to CDP" type="custom.CSComponents.FtpUpload" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="ServiceID">sftp-company-aws-cdp</parameter>
+                    <parameter name="FilePattern">company_PRODUCT.*\.txt</parameter>
+                    <parameter name="SourceFolder">feeds/product</parameter>
+                    <parameter name="TargetFolder">env_DEV/outbound</parameter>
+                    <parameter name="Recursive">false</parameter>
+                    <parameter name="NoFileFoundStatus">OK</parameter>
+                </parameters>
+            </step>
+            <step step-id="company US Upload to SFMC" type="custom.CSComponents.FtpUpload" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="ServiceID">sftp-akamai-aws-sfmc</parameter>
+                    <parameter name="FilePattern">company_PRODUCT.*\.txt</parameter>
+                    <parameter name="SourceFolder">feeds/product</parameter>
+                    <parameter name="TargetFolder">env_DEV/outbound</parameter>
+                    <parameter name="Recursive">false</parameter>
+                    <parameter name="ArchiveFolder">feeds/archive/product</parameter>
+                    <parameter name="NoFileFoundStatus">OK</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <rules/>
+        <triggers>
+            <run-once enabled="false">
+                <date>2021-04-01Z</date>
+                <time>11:34:07.000Z</time>
+            </run-once>
+        </triggers>
+    </job>
+
+    <job job-id="Blueconic - Customer Feed Export" priority="0">
+        <description/>
+        <parameters/>
+        <split sequential="false">
+            <contexts template-ref="template_26">
+                <context site-id="company"/>
+                <context site-id="company"/>
+            </contexts>
+            <flow-template template-id="template_26">
+                <step step-id="Generate Customer Feed" type="custom.CustomerExportCSV" enforce-restart="false">
+                    <description/>
+                    <parameters>
+                        <parameter name="FilePathPattern">feeds/customers/customer-_siteid_-_now_.csv</parameter>
+                    </parameters>
+                </step>
+            </flow-template>
+        </split>
+        <flow>
+            <context site-id="Sites"/>
+            <step step-id="company CA Upload to CDP" type="custom.CSComponents.FtpUpload" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="ServiceID">sftp-company-aws-cdp</parameter>
+                    <parameter name="FilePattern">customer-company.*\.csv</parameter>
+                    <parameter name="SourceFolder">feeds/customers</parameter>
+                    <parameter name="TargetFolder">env_QA/outbound</parameter>
+                    <parameter name="Recursive">false</parameter>
+                    <parameter name="NoFileFoundStatus">OK</parameter>
+                    <parameter name="IsDisabled">false</parameter>
+                </parameters>
+            </step>
+            <step step-id="company CA Upload to CRM" type="custom.CSComponents.FtpUpload" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="ServiceID">sftp-company-aws-crm</parameter>
+                    <parameter name="FilePattern">customer-company.*\.csv</parameter>
+                    <parameter name="SourceFolder">feeds/customers</parameter>
+                    <parameter name="TargetFolder">CRM/env_QA/outbound</parameter>
+                    <parameter name="Recursive">false</parameter>
+                    <parameter name="NoFileFoundStatus">OK</parameter>
+                    <parameter name="IsDisabled">false</parameter>
+                </parameters>
+            </step>
+            <step step-id="company US Upload to CDP" type="custom.CSComponents.FtpUpload" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="ServiceID">sftp-company-aws-cdp</parameter>
+                    <parameter name="FilePattern">customer-company.*\.csv</parameter>
+                    <parameter name="SourceFolder">feeds/customers</parameter>
+                    <parameter name="TargetFolder">env_QA/outbound</parameter>
+                    <parameter name="Recursive">false</parameter>
+                    <parameter name="NoFileFoundStatus">OK</parameter>
+                    <parameter name="IsDisabled">false</parameter>
+                </parameters>
+            </step>
+            <step step-id="company US Upload to CRM" type="custom.CSComponents.FtpUpload" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="ServiceID">sftp-company-aws-crm</parameter>
+                    <parameter name="FilePattern">customer-company.*\.csv</parameter>
+                    <parameter name="SourceFolder">feeds/customers</parameter>
+                    <parameter name="TargetFolder">CRM/env_QA/outbound</parameter>
+                    <parameter name="Recursive">false</parameter>
+                    <parameter name="ArchiveFolder">feeds/archive/customers</parameter>
+                    <parameter name="NoFileFoundStatus">OK</parameter>
+                    <parameter name="IsDisabled">false</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <rules/>
+        <triggers>
+            <run-once enabled="false">
+                <date>2021-04-01Z</date>
+                <time>12:46:43.000Z</time>
+            </run-once>
+        </triggers>
+    </job>
+
+    <job job-id="UpdateCustomerProfiles" priority="0">
+        <description/>
+        <parameters/>
+        <flow>
+            <context site-id="Sites"/>
+            <step step-id="FTPDownload" type="custom.CSComponents.FtpDownload" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="ServiceID">serviceID</parameter>
+                    <parameter name="SourceFolder">sourceFolder</parameter>
+                    <parameter name="TargetFolder">src/download</parameter>
+                    <parameter name="Recursive">false</parameter>
+                    <parameter name="DeleteRemoteFiles">true</parameter>
+                    <parameter name="NoFileFoundStatus">OK</parameter>
+                    <parameter name="IsDisabled">true</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <flow>
+            <context site-id="company"/>
+            <step step-id="UpdateCustomerType" type="ExecuteScriptModule" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="ExecuteScriptModule.Module">bc_wl_jobs/cartridge/scripts/jobsteps/customer/UpdateCustomerType.js</parameter>
+                    <parameter name="ExecuteScriptModule.FunctionName">execute</parameter>
+                    <parameter name="ExecuteScriptModule.Transactional">false</parameter>
+                    <parameter name="SourceFolder">src/feed/workday</parameter>
+                    <parameter name="FileNamePattern">^workday-\d{8}.csv$</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <flow>
+            <context site-id="Sites"/>
+            <step step-id="MoveFeedToArcive" type="custom.CSComponents.MoveFiles" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="FilePattern">^workday-\d{8}.csv$</parameter>
+                    <parameter name="SourceFolder">IMPEX/src/feed/workday</parameter>
+                    <parameter name="TargetFolder">IMPEX/src/feed/workday/archive</parameter>
+                    <parameter name="CopyOnly">false</parameter>
+                    <parameter name="Recursive">false</parameter>
+                    <parameter name="Overwrite">true</parameter>
+                    <parameter name="NoFileFoundStatus">OK</parameter>
+                    <parameter name="IsDisabled">false</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <rules/>
+        <triggers>
+            <run-once enabled="false">
+                <date>2021-03-01Z</date>
+                <time>12:47:52.000Z</time>
+            </run-once>
+        </triggers>
+    </job>
+
+    <job job-id="GenerateSiteMap" priority="0">
+        <description/>
+        <parameters/>
+        <flow>
+            <context site-id="company"/>
+            <step step-id="GenerateSiteMap" type="custom.CSComponents.GenerateSiteMap" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="TargetFolder">src/sitemap</parameter>
+                    <parameter name="FileNamePattern">sitemap_sfra_products_&lt;BRAND&gt;&lt;COUNTRY&gt;_now__&lt;index&gt;.xml</parameter>
+                    <parameter name="Catalog">company-demo-storefront</parameter>
+                    <parameter name="Locale">en_CA</parameter>
+                    <parameter name="AlternateLocales">en_CA, fr_CA</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <flow>
+            <context site-id="Sites"/>
+            <step step-id="UploadFilesToSFTP" type="custom.CSComponents.FtpUpload" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="ServiceID">sitemap.sftp.sendFile</parameter>
+                    <parameter name="FilePattern">sitemap_sfra_products.*\.xml$</parameter>
+                    <parameter name="SourceFolder">src/sitemap</parameter>
+                    <parameter name="TargetFolder">sfra/dev</parameter>
+                    <parameter name="Recursive">false</parameter>
+                    <parameter name="ArchiveFolder">src/sitemap/archive</parameter>
+                    <parameter name="NoFileFoundStatus">OK</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <rules/>
+        <triggers>
+            <run-once enabled="false">
+                <date>2021-03-20Z</date>
+                <time>11:08:12.000Z</time>
+            </run-once>
+        </triggers>
+    </job>
+
+    <job job-id="TNFUS-OMS-InventoryLists-Import" priority="0">
+        <description>Full - Inventory import job will be triggered via OCAPI by MuleSoft daily (the schedule of triggering will be controlled by MuleSoft)</description>
+        <parameters/>
+        <flow>
+            <context site-id="tnf-us"/>
+            <step step-id="Transfer From SFTP" type="custom.CSComponents.FtpDownload" enforce-restart="false">
+                <description>Transfer Full Inventory File From SFTP</description>
+                <parameters>
+                    <parameter name="ServiceID">download.mulesoft.inventory.sftp</parameter>
+                    <parameter name="FilePattern">^inventory_tnf_us(?!_full).*\.xml$</parameter>
+                    <parameter name="SourceFolder">dev/Inventory</parameter>
+                    <parameter name="TargetFolder">src/download/inventory/tnf/us</parameter>
+                    <parameter name="Recursive">true</parameter>
+                    <parameter name="DeleteRemoteFiles">true</parameter>
+                    <parameter name="NoFileFoundStatus">OK</parameter>
+                    <parameter name="IsDisabled">false</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <flow>
+            <context site-id="Sites"/>
+            <step step-id="Delta Inventory Import" type="custom.CSComponents.ImportInventoryLists" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="SourceFolder">src/download/inventory/tnf/us</parameter>
+                    <parameter name="FilePattern">^inventory_tnf_us(?!_full).*\.xml$</parameter>
+                    <parameter name="FileAction">ARCHIVE</parameter>
+                    <parameter name="ImportMode">MERGE</parameter>
+                    <parameter name="NoFileFoundStatus">OK</parameter>
+                    <parameter name="OnError">CONTINUE</parameter>
+                    <parameter name="ArchivePath">src/archive/download/inventory/tnf/us</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <rules>
+            <on-running runtime-threshold="15m" enabled="true">
+                <mark-job-as-hanging/>
+            </on-running>
+            <on-exit status="ERROR" enabled="false">
+                <send-mail>
+                    <from>noreply@demandware.com</from>
+                    <to>demo@company.com</to>
+                </send-mail>
+            </on-exit>
+        </rules>
+        <triggers>
+            <run-recurring enabled="false">
+                <recurrence>
+                    <date-from>2020-10-15Z</date-from>
+                    <start-time>05:00:00.000Z</start-time>
+                    <interval>15m</interval>
+                    <day-of-week>
+                        <weekday>Thursday</weekday>
+                        <weekday>Friday</weekday>
+                        <weekday>Saturday</weekday>
+                        <weekday>Sunday</weekday>
+                        <weekday>Tuesday</weekday>
+                        <weekday>Wednesday</weekday>
+                        <weekday>Monday</weekday>
+                    </day-of-week>
+                </recurrence>
+            </run-recurring>
+        </triggers>
+    </job>
+
+    <job job-id="OMS-Import-InventoryLists" priority="0">
+        <description>Full - Inventory import job will be triggered via OCAPI by MuleSoft daily (the schedule of triggering will be controlled by MuleSoft)</description>
+        <parameters/>
+        <flow>
+            <context site-id="company"/>
+            <step step-id="Transfer From SFTP" type="custom.CSComponents.FtpDownload" enforce-restart="false">
+                <description>Transfer Full Inventory File From SFTP</description>
+                <parameters>
+                    <parameter name="ServiceID">download.mulesoft.sftp</parameter>
+                    <parameter name="FilePattern">^inventory(?!_full).*\.xml$</parameter>
+                    <parameter name="SourceFolder"></parameter>
+                    <parameter name="TargetFolder">src/download/inventory/company/ca</parameter>
+                    <parameter name="Recursive">true</parameter>
+                    <parameter name="DeleteRemoteFiles">true</parameter>
+                    <parameter name="NoFileFoundStatus">OK</parameter>
+                    <parameter name="IsDisabled">false</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <flow>
+            <context site-id="Sites"/>
+            <step step-id="Delta Inventory Import" type="custom.CSComponents.ImportInventoryLists" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="SourceFolder">src/download/inventory/company/ca</parameter>
+                    <parameter name="FilePattern">^inventory(?!_full).*\.xml$</parameter>
+                    <parameter name="FileAction">ARCHIVE</parameter>
+                    <parameter name="ImportMode">MERGE</parameter>
+                    <parameter name="NoFileFoundStatus">OK</parameter>
+                    <parameter name="OnError">CONTINUE</parameter>
+                    <parameter name="ArchivePath">src/archive/download/inventory/company/ca</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <rules>
+            <on-running runtime-threshold="15m" enabled="true">
+                <mark-job-as-hanging/>
+            </on-running>
+            <on-exit status="ERROR" enabled="false">
+                <send-mail>
+                    <from>production@demandware.com</from>
+                    <to>demo@company.com</to>
+                </send-mail>
+            </on-exit>
+        </rules>
+        <triggers>
+            <run-recurring enabled="false">
+                <recurrence>
+                    <date-from>2020-10-15Z</date-from>
+                    <start-time>05:00:00.000Z</start-time>
+                    <interval>15m</interval>
+                    <day-of-week>
+                        <weekday>Sunday</weekday>
+                        <weekday>Saturday</weekday>
+                        <weekday>Thursday</weekday>
+                        <weekday>Tuesday</weekday>
+                        <weekday>Wednesday</weekday>
+                        <weekday>Friday</weekday>
+                        <weekday>Monday</weekday>
+                    </day-of-week>
+                </recurrence>
+            </run-recurring>
+        </triggers>
+    </job>
+
+    <job job-id="TNFUS-OMS-FullInventoryLists-Import" priority="0">
+        <description/>
+        <parameters/>
+        <flow>
+            <context site-id="tnf-us"/>
+            <step step-id="Transfer From SFTP" type="custom.CSComponents.FtpDownload" enforce-restart="false">
+                <description>Transfer Full Inventory File From SFTP</description>
+                <parameters>
+                    <parameter name="ServiceID">download.mulesoft.inventory.sftp</parameter>
+                    <parameter name="FilePattern">^inventory_full_tnf_us.*\.xml$</parameter>
+                    <parameter name="SourceFolder">dev/Inventory</parameter>
+                    <parameter name="TargetFolder">src/download/inventory/tnf/us</parameter>
+                    <parameter name="Recursive">true</parameter>
+                    <parameter name="DeleteRemoteFiles">true</parameter>
+                    <parameter name="NoFileFoundStatus">ERROR</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <flow>
+            <context site-id="Sites"/>
+            <step step-id="FullInventoryImport" type="custom.CSComponents.ImportInventoryLists" enforce-restart="false">
+                <description>Imports all SFRA standard files. Provides a generic configuration that should be suitable for most use cases. Replaces general import components</description>
+                <parameters>
+                    <parameter name="SourceFolder">src/download/inventory/tnf/us</parameter>
+                    <parameter name="FilePattern">^inventory_full_tnf_us.*\.xml$</parameter>
+                    <parameter name="FileAction">ARCHIVE</parameter>
+                    <parameter name="ImportMode">MERGE</parameter>
+                    <parameter name="NoFileFoundStatus">ERROR</parameter>
+                    <parameter name="OnError">CONTINUE</parameter>
+                    <parameter name="ArchivePath">src/archive/download/inventory/tnf/us</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <rules/>
+        <triggers>
+            <run-recurring enabled="true">
+                <recurrence>
+                    <date-from>2021-04-16Z</date-from>
+                    <start-time>20:40:56.000Z</start-time>
+                    <interval>24h</interval>
+                    <day-of-week/>
+                </recurrence>
+            </run-recurring>
+        </triggers>
+    </job>
+
+    <job job-id="TNFCA-OMS-FullInventoryLists-Import" priority="0">
+        <description/>
+        <parameters/>
+        <flow>
+            <context site-id="tnf-ca"/>
+            <step step-id="Transfer From SFTP" type="custom.CSComponents.FtpDownload" enforce-restart="false">
+                <description>Transfer Full Inventory File From SFTP</description>
+                <parameters>
+                    <parameter name="ServiceID">download.mulesoft.inventory.sftp</parameter>
+                    <parameter name="FilePattern">^inventory_full_tnf_ca.*\.xml$</parameter>
+                    <parameter name="SourceFolder">dev/Inventory</parameter>
+                    <parameter name="TargetFolder">src/download/inventory/tnf/ca</parameter>
+                    <parameter name="Recursive">true</parameter>
+                    <parameter name="DeleteRemoteFiles">true</parameter>
+                    <parameter name="NoFileFoundStatus">ERROR</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <flow>
+            <context site-id="Sites"/>
+            <step step-id="FullInventoryImport" type="custom.CSComponents.ImportInventoryLists" enforce-restart="false">
+                <description>Imports all SFRA standard files. Provides a generic configuration that should be suitable for most use cases. Replaces general import components</description>
+                <parameters>
+                    <parameter name="SourceFolder">src/download/inventory/tnf/ca</parameter>
+                    <parameter name="FilePattern">^inventory_full_tnf_ca.*\.xml$</parameter>
+                    <parameter name="FileAction">ARCHIVE</parameter>
+                    <parameter name="ImportMode">MERGE</parameter>
+                    <parameter name="NoFileFoundStatus">ERROR</parameter>
+                    <parameter name="OnError">CONTINUE</parameter>
+                    <parameter name="ArchivePath">src/archive/download/inventory/tnf/ca</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <rules/>
+        <triggers>
+            <run-recurring enabled="true">
+                <recurrence>
+                    <date-from>2021-04-16Z</date-from>
+                    <start-time>20:40:56.000Z</start-time>
+                    <interval>24h</interval>
+                    <day-of-week/>
+                </recurrence>
+            </run-recurring>
+        </triggers>
+    </job>
+
+    <job job-id="TNFCA-OMS-InventoryLists-Import" priority="0">
+        <description>Full - Inventory import job will be triggered via OCAPI by MuleSoft daily (the schedule of triggering will be controlled by MuleSoft)</description>
+        <parameters/>
+        <flow>
+            <context site-id="tnf-ca"/>
+            <step step-id="Transfer From SFTP" type="custom.CSComponents.FtpDownload" enforce-restart="false">
+                <description>Transfer Full Inventory File From SFTP</description>
+                <parameters>
+                    <parameter name="ServiceID">download.mulesoft.inventory.sftp</parameter>
+                    <parameter name="FilePattern">^inventory_tnf_ca(?!_full).*\.xml$</parameter>
+                    <parameter name="SourceFolder">dev/Inventory</parameter>
+                    <parameter name="TargetFolder">src/download/inventory/tnf/ca</parameter>
+                    <parameter name="Recursive">true</parameter>
+                    <parameter name="DeleteRemoteFiles">true</parameter>
+                    <parameter name="NoFileFoundStatus">OK</parameter>
+                    <parameter name="IsDisabled">false</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <flow>
+            <context site-id="Sites"/>
+            <step step-id="Delta Inventory Import" type="custom.CSComponents.ImportInventoryLists" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="SourceFolder">src/download/inventory/tnf/ca</parameter>
+                    <parameter name="FilePattern">^inventory_tnf_ca(?!_full).*\.xml$</parameter>
+                    <parameter name="FileAction">ARCHIVE</parameter>
+                    <parameter name="ImportMode">MERGE</parameter>
+                    <parameter name="NoFileFoundStatus">OK</parameter>
+                    <parameter name="OnError">CONTINUE</parameter>
+                    <parameter name="ArchivePath">src/archive/download/inventory/tnf/ca</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <rules>
+            <on-running runtime-threshold="15m" enabled="true">
+                <mark-job-as-hanging/>
+            </on-running>
+            <on-exit status="ERROR" enabled="false">
+                <send-mail>
+                    <from>noreply@demandware.com</from>
+                    <to>demo@company.com</to>
+                </send-mail>
+            </on-exit>
+        </rules>
+        <triggers>
+            <run-recurring enabled="false">
+                <recurrence>
+                    <date-from>2020-10-15Z</date-from>
+                    <start-time>05:00:00.000Z</start-time>
+                    <interval>15m</interval>
+                    <day-of-week>
+                        <weekday>Thursday</weekday>
+                        <weekday>Friday</weekday>
+                        <weekday>Saturday</weekday>
+                        <weekday>Sunday</weekday>
+                        <weekday>Tuesday</weekday>
+                        <weekday>Wednesday</weekday>
+                        <weekday>Monday</weekday>
+                    </day-of-week>
+                </recurrence>
+            </run-recurring>
+        </triggers>
+    </job>
+
+    <job job-id="OMS-Import-FullInventoryLists" priority="0">
+        <description/>
+        <parameters/>
+        <flow>
+            <context site-id="company"/>
+            <step step-id="Transfer From SFTP" type="custom.CSComponents.FtpDownload" enforce-restart="false">
+                <description>Transfer Full Inventory File From SFTP</description>
+                <parameters>
+                    <parameter name="ServiceID">download.mulesoft.sftp</parameter>
+                    <parameter name="FilePattern">^inventory_full.*\.xml$</parameter>
+                    <parameter name="SourceFolder"></parameter>
+                    <parameter name="TargetFolder">src/download/inventory/company/ca</parameter>
+                    <parameter name="Recursive">true</parameter>
+                    <parameter name="DeleteRemoteFiles">true</parameter>
+                    <parameter name="NoFileFoundStatus">ERROR</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <flow>
+            <context site-id="Sites"/>
+            <step step-id="FullInventoryImport" type="custom.CSComponents.ImportInventoryLists" enforce-restart="false">
+                <description>Imports all SFRA standard files. Provides a generic configuration that should be suitable for most use cases. Replaces general import components</description>
+                <parameters>
+                    <parameter name="SourceFolder">src/download/inventory/company/ca</parameter>
+                    <parameter name="FilePattern">^inventory_full.*\.xml$</parameter>
+                    <parameter name="FileAction">ARCHIVE</parameter>
+                    <parameter name="ImportMode">MERGE</parameter>
+                    <parameter name="NoFileFoundStatus">ERROR</parameter>
+                    <parameter name="OnError">CONTINUE</parameter>
+                    <parameter name="ArchivePath">src/archive/download/inventory/company/ca</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <rules/>
+        <triggers>
+            <run-recurring enabled="true">
+                <recurrence>
+                    <date-from>2021-04-16Z</date-from>
+                    <start-time>20:40:56.000Z</start-time>
+                    <interval>24h</interval>
+                    <day-of-week/>
+                </recurrence>
+            </run-recurring>
+        </triggers>
+    </job>
+
+    <job job-id="CategoryPageUrlUpdate" priority="0">
+        <description>CategoryPageUrlUpdate</description>
+        <parameters/>
+        <flow>
+            <context site-id="company"/>
+            <step step-id="CategoryPageUrlUpdate [US]" type="ExecuteScriptModule" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="ExecuteScriptModule.Module">bc_wl_jobs/cartridge/scripts/jobsteps/CategoryPageURLUpdateXML.js</parameter>
+                    <parameter name="ExecuteScriptModule.FunctionName">generateXML</parameter>
+                    <parameter name="ExecuteScriptModule.Transactional">false</parameter>
+                    <parameter name="siteID">company</parameter>
+                    <parameter name="catalogID">company-demo-storefront</parameter>
+                    <parameter name="languageLocale">en_US</parameter>
+                    <parameter name="filePathPattern">src/catalog/catalogCategoryExport_en-US_.xml</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <flow>
+            <context site-id="company"/>
+            <step step-id="CategoryPageUrlUpdate" type="ExecuteScriptModule" enforce-restart="false">
+                <description>CategoryPageUrlUpdate</description>
+                <parameters>
+                    <parameter name="ExecuteScriptModule.Module">bc_wl_jobs/cartridge/scripts/jobsteps/CategoryPageURLUpdateXML.js</parameter>
+                    <parameter name="ExecuteScriptModule.FunctionName">generateXML</parameter>
+                    <parameter name="ExecuteScriptModule.Transactional">false</parameter>
+                    <parameter name="siteID">company</parameter>
+                    <parameter name="catalogID">company-demo-storefront</parameter>
+                    <parameter name="languageLocale">en_CA</parameter>
+                    <parameter name="filePathPattern">src/catalog/catalogCategoryExport_en-CA_.xml</parameter>
+                </parameters>
+                <rules>
+                    <on-exit status="ERROR">
+                        <stop-job/>
+                    </on-exit>
+                </rules>
+            </step>
+            <step step-id="CategoryPageURLUpdate-fr-CA" type="ExecuteScriptModule" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="ExecuteScriptModule.Module">bc_wl_jobs/cartridge/scripts/jobsteps/CategoryPageURLUpdateXML.js</parameter>
+                    <parameter name="ExecuteScriptModule.FunctionName">generateXML</parameter>
+                    <parameter name="ExecuteScriptModule.Transactional">false</parameter>
+                    <parameter name="siteID">company</parameter>
+                    <parameter name="catalogID">company-demo-storefront</parameter>
+                    <parameter name="filePathPattern">src/catalog/catalogCategoryExport_fr-CA_.xml</parameter>
+                    <parameter name="languageLocale">fr_CA</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <flow>
+            <context site-id="Sites"/>
+            <step step-id="importSiteCatalog" type="ImportCatalog" enforce-restart="false">
+                <description>import site catalog company-demo</description>
+                <parameters>
+                    <parameter name="WorkingFolder">catalog/</parameter>
+                    <parameter name="FileNamePattern">catalogCategoryExport*.*\.xml</parameter>
+                    <parameter name="NoFilesFoundHandling">NO_FILES_FOUND</parameter>
+                    <parameter name="ImportMode">Merge</parameter>
+                    <parameter name="ImportFailedHandling">ERROR</parameter>
+                    <parameter name="AfterImportFileHandling">Archive</parameter>
+                    <parameter name="ArchiveFolder">archive</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <rules>
+            <on-running runtime-threshold="60m" enabled="true">
+                <mark-job-as-hanging/>
+                <send-mail>
+                    <from>donotreply@demandware.net</from>
+                    <to>demo@company.com</to>
+                </send-mail>
+            </on-running>
+            <on-retry enabled="true">
+                <send-mail>
+                    <from>donotreply@demandware.net</from>
+                    <to>demo@company.com</to>
+                </send-mail>
+            </on-retry>
+            <on-exit status="ERROR" enabled="true">
+                <send-mail>
+                    <from>donotreply@demandware.net</from>
+                    <to>demo@company.com</to>
+                </send-mail>
+            </on-exit>
+        </rules>
+        <triggers>
+            <run-once enabled="false">
+                <date>2021-04-01Z</date>
+                <time>13:05:33.000Z</time>
+            </run-once>
+        </triggers>
+    </job>
+
+    <job job-id="ProductLists Retention" priority="0">
+        <description>Product lists persistence customization</description>
+        <parameters/>
+        <flow>
+            <context site-id="company"/>
+            <step step-id="productListsRetention" type="custom.productLists.retention" enforce-restart="false">
+                <description/>
+                <parameters/>
+            </step>
+        </flow>
+        <rules/>
+        <triggers>
+            <run-once enabled="false">
+                <date>2021-05-18Z</date>
+                <time>15:32:09.000Z</time>
+            </run-once>
+        </triggers>
+    </job>
+
+    <job job-id="Customer profile update" priority="0">
+        <description/>
+        <parameters/>
+        <flow>
+            <context site-id="company"/>
+            <step step-id="profileUpdate" type="custom.customer.profileUpdate" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="isProcessingInterests">true</parameter>
+                    <parameter name="isProcessingPreferredCard">true</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <rules/>
+        <triggers>
+            <run-once enabled="false">
+                <date>2021-05-26Z</date>
+                <time>11:21:27.000Z</time>
+            </run-once>
+        </triggers>
+    </job>
+
+    <job job-id="demo" priority="0">
+        <description/>
+        <parameters/>
+        <split sequential="false">
+            <flow>
+                <context site-id="company"/>
+                <step step-id="Feed generation[CA]" type="custom.ProductFeedCSV" enforce-restart="false">
+                    <description/>
+                    <parameters>
+                        <parameter name="FileNamePattern">demo-CA_PRODUCT_{{locale}}.csv</parameter>
+                        <parameter name="Separator">,</parameter>
+                        <parameter name="TargetFolder">/feeds/demo</parameter>
+                        <parameter name="WriteHeaders">true</parameter>
+                        <parameter name="RelativeURLs">false</parameter>
+                        <parameter name="IncludeDataWithEmptyURL">false</parameter>
+                        <parameter name="FeedFormat">demo</parameter>
+                        <parameter name="ImageViewType">hi-res</parameter>
+                    </parameters>
+                </step>
+            </flow>
+            <flow>
+                <context site-id="company"/>
+                <step step-id="Feed generation[US]" type="custom.ProductFeedCSV" enforce-restart="false">
+                    <description/>
+                    <parameters>
+                        <parameter name="FileNamePattern">demo-US_PRODUCT_{{locale}}.csv</parameter>
+                        <parameter name="Separator">,</parameter>
+                        <parameter name="TargetFolder">/feeds/demo</parameter>
+                        <parameter name="WriteHeaders">true</parameter>
+                        <parameter name="RelativeURLs">false</parameter>
+                        <parameter name="IncludeDataWithEmptyURL">false</parameter>
+                        <parameter name="FeedFormat">demo</parameter>
+                        <parameter name="ImageViewType">hi-res</parameter>
+                    </parameters>
+                </step>
+            </flow>
+        </split>
+        <flow>
+            <context site-id="Sites"/>
+            <step step-id="CSComponents.FtpUpload" type="custom.CSComponents.FtpUpload" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="ServiceID">service-ftp-demo</parameter>
+                    <parameter name="FilePattern">.*</parameter>
+                    <parameter name="SourceFolder">feeds/demo</parameter>
+                    <parameter name="TargetFolder">/</parameter>
+                    <parameter name="Recursive">false</parameter>
+                    <parameter name="NoFileFoundStatus">OK</parameter>
+                    <parameter name="IsDisabled">true</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <rules/>
+        <triggers>
+            <run-once enabled="false">
+                <date>2021-04-25Z</date>
+                <time>10:35:52.000Z</time>
+            </run-once>
+        </triggers>
+    </job>
+    <job job-id="IslandPacific_ImportCatalog" priority="0">
+        <description>Catalog import with categories</description>
+        <parameters/>
+        <flow>
+            <context site-id="Sites"/>
+            <step step-id="DownloadProductMasterTXT" type="custom.CSComponents.FtpDownload" enforce-restart="true">
+                <description>Download Catalog TXT file from AWS SFTP.</description>
+                <parameters>
+                    <parameter name="ServiceID">IPMS_AWS_SFTP</parameter>
+                    <parameter name="KeyAlias">pos_sftp</parameter>
+                    <parameter name="FilePattern">^[Nn][Ff]_Product_Master_[\w|-]*.txt$</parameter>
+                    <parameter name="SourceFolder">master_data</parameter>
+                    <parameter name="TargetFolder">src/Aptos_Catalog/SFTPDownload</parameter>
+                    <parameter name="Recursive">false</parameter>
+                    <parameter name="DeleteRemoteFiles">true</parameter>
+                    <parameter name="NoFileFoundStatus">OK</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <flow>
+            <context site-id="Sites"/>
+            <step step-id="TransformFileToSFRACatalogFormat" type="custom.TransformToSFRACatalogFile" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="catalogID">pos-master-catalog</parameter>
+                    <parameter name="filePattern">^[Nn][Ff]_Product_Master_[\w|-]*.txt$</parameter>
+                    <parameter name="sourcePath">Aptos_Catalog/SFTPDownload</parameter>
+                    <parameter name="categoryTargetPath">Aptos_Catalog/TransformedCatalogFiles/Category</parameter>
+                    <parameter name="productTargetPathProduct">Aptos_Catalog/TransformedCatalogFiles/Product</parameter>
+                    <parameter name="categoryAssignmentTargetPath">Aptos_Catalog/TransformedCatalogFiles/CategoryAssignment</parameter>
+                    <parameter name="afterDownloadOption">DELETE</parameter>
+                    <parameter name="sortFiles">true</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <split sequential="false">
+            <flow>
+                <context site-id="Sites"/>
+                <step step-id="ImportCategories" type="ImportCatalog" enforce-restart="false">
+                    <description/>
+                    <parameters>
+                        <parameter name="WorkingFolder">Aptos_Catalog/TransformedCatalogFiles/CategoryAssignment</parameter>
+                        <parameter name="FileNamePattern">^[Cc]ategory[\w|-]*.xml$</parameter>
+                        <parameter name="NoFilesFoundHandling">NO_FILES_FOUND</parameter>
+                        <parameter name="ImportMode">Merge</parameter>
+                        <parameter name="ImportFailedHandling">WARN</parameter>
+                        <parameter name="AfterImportFileHandling">Delete</parameter>
+                        <parameter name="ArchiveFolder">archive</parameter>
+                    </parameters>
+                </step>
+            </flow>
+            <flow>
+                <context site-id="Sites"/>
+                <step step-id="ImportProducts" type="ImportCatalog" enforce-restart="false">
+                    <description/>
+                    <parameters>
+                        <parameter name="WorkingFolder">Aptos_Catalog/TransformedCatalogFiles/Product</parameter>
+                        <parameter name="FileNamePattern">^[Pp]roduct[\w|-]*.xml$</parameter>
+                        <parameter name="NoFilesFoundHandling">NO_FILES_FOUND</parameter>
+                        <parameter name="ImportMode">Merge</parameter>
+                        <parameter name="ImportFailedHandling">WARN</parameter>
+                        <parameter name="AfterImportFileHandling">Delete</parameter>
+                        <parameter name="ArchiveFolder">archive</parameter>
+                    </parameters>
+                </step>
+            </flow>
+        </split>
+        <flow>
+            <context site-id="Sites"/>
+            <step step-id="ImportCategoriesAssignment" type="ImportCatalog" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="WorkingFolder">Aptos_Catalog/TransformedCatalogFiles/CategoryAssignment</parameter>
+                    <parameter name="FileNamePattern">^[Cc]ategory[\w|-]*.xml$</parameter>
+                    <parameter name="NoFilesFoundHandling">NO_FILES_FOUND</parameter>
+                    <parameter name="ImportMode">Merge</parameter>
+                    <parameter name="ImportFailedHandling">WARN</parameter>
+                    <parameter name="AfterImportFileHandling">Delete</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <rules>
+            <on-running runtime-threshold="60m" enabled="true">
+                <mark-job-as-hanging/>
+                <send-mail>
+                    <from>noreply@salesforce.com</from>
+                    <to>demo@company.com</to>
+                </send-mail>
+            </on-running>
+            <on-exit status="ERROR" enabled="true">
+                <send-mail>
+                    <from>noreply@salesforce.com</from>
+                    <to>demo@company.com</to>
+                </send-mail>
+            </on-exit>
+        </rules>
+        <triggers>
+            <run-recurring enabled="false">
+                <recurrence>
+                    <date-from>2021-07-24Z</date-from>
+                    <start-time>14:00:00.000Z</start-time>
+                    <interval>12h</interval>
+                    <day-of-week>
+                        <weekday>Wednesday</weekday>
+                        <weekday>Monday</weekday>
+                        <weekday>Thursday</weekday>
+                        <weekday>Tuesday</weekday>
+                        <weekday>Saturday</weekday>
+                        <weekday>Friday</weekday>
+                        <weekday>Sunday</weekday>
+                    </day-of-week>
+                </recurrence>
+            </run-recurring>
+        </triggers>
+    </job>
+    <job job-id="ImportPricebook" priority="0">
+        <description/>
+        <parameters/>
+        <flow>
+            <context site-id="Sites"/>
+            <step step-id="SFTPPricebooksDownload" type="custom.CSComponents.FtpDownload" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="ServiceID">pricebook.download.sftp</parameter>
+                    <parameter name="FilePattern">ecom_pricebook_.*\.xml</parameter>
+                    <parameter name="SourceFolder">/</parameter>
+                    <parameter name="TargetFolder">src/download/pricebook</parameter>
+                    <parameter name="Recursive">false</parameter>
+                    <parameter name="DeleteRemoteFiles">true</parameter>
+                    <parameter name="NoFileFoundStatus">OK</parameter>
+                    <parameter name="IsDisabled">false</parameter>
+                </parameters>
+            </step>
+            <step step-id="ImportDownloadedPricebooks" type="ImportPriceBook" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="WorkingFolder">download/pricebook</parameter>
+                    <parameter name="FileNamePattern">ecom_pricebook_.*\.xml</parameter>
+                    <parameter name="NoFilesFoundHandling">NO_FILES_FOUND</parameter>
+                    <parameter name="ImportMode">Merge</parameter>
+                    <parameter name="ImportFailedHandling">ERROR</parameter>
+                    <parameter name="AfterImportFileHandling">Archive</parameter>
+                    <parameter name="ArchiveFolder">archive/pricebooks</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <rules>
+            <on-running runtime-threshold="60m" enabled="true">
+                <mark-job-as-hanging/>
+                <send-mail>
+                    <from>noreply@salesforce.com</from>
+                    <to>demo@company.com</to>
+                </send-mail>
+            </on-running>
+            <on-exit status="ERROR" enabled="false">
+                <send-mail>
+                    <from>noreply@salesforce.com</from>
+                    <to>demo@company.com</to>
+                </send-mail>
+            </on-exit>
+        </rules>
+        <triggers>
+            <run-recurring enabled="true">
+                <recurrence>
+                    <date-from>2021-07-16Z</date-from>
+                    <start-time>00:22:10.000Z</start-time>
+                    <interval>30m</interval>
+                    <day-of-week>
+                        <weekday>Monday</weekday>
+                        <weekday>Friday</weekday>
+                        <weekday>Tuesday</weekday>
+                        <weekday>Wednesday</weekday>
+                        <weekday>Saturday</weekday>
+                        <weekday>Thursday</weekday>
+                        <weekday>Sunday</weekday>
+                    </day-of-week>
+                </recurrence>
+            </run-recurring>
+        </triggers>
+    </job>
+    <job job-id="Google Products Feed" priority="0">
+        <description>Google Products Feed for (LinkSynergy, Kipcast)</description>
+        <parameters/>
+        <flow>
+            <context site-id="company"/>
+            <step step-id="googleProductsFeed" type="custom.google.products.feed" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="googleFeedFilePath">src/custom/feeds/google/test</parameter>
+                    <parameter name="googleFeedFileName">Non_Prod_ProductFeed__{{locale}}_{{date}}.xml</parameter>
+                    <parameter name="imageViewType">hi-res</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <flow>
+            <context site-id="company"/>
+            <step step-id="googleProductFeedUS" type="custom.google.products.feed" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="googleFeedFilePath">src/custom/feeds/google/us</parameter>
+                    <parameter name="googleFeedFileName">demo-US_PRODUCT_{{locale}}.xml</parameter>
+                    <parameter name="imageViewType">hi-res</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <flow>
+            <context site-id="Sites"/>
+            <step step-id="Google-Feed-Upload" type="custom.CSComponents.FtpUpload" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="ServiceID">service-ftp-linksynergy</parameter>
+                    <parameter name="FilePattern">Non_Prod_ProductFeed*</parameter>
+                    <parameter name="SourceFolder">src/custom/feeds/google</parameter>
+                    <parameter name="TargetFolder">/</parameter>
+                    <parameter name="Recursive">false</parameter>
+                    <parameter name="ArchiveFolder">archive/feeds/google</parameter>
+                    <parameter name="NoFileFoundStatus">OK</parameter>
+                    <parameter name="IsDisabled">false</parameter>
+                </parameters>
+            </step>
+            <step step-id="SmartGift-Feed-Upload-US" type="custom.CSComponents.FtpUpload" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="ServiceID">service.upload.smartGift.ftp</parameter>
+                    <parameter name="FilePattern">demo-US_PRODUCT*</parameter>
+                    <parameter name="SourceFolder">src/custom/feeds/google/us</parameter>
+                    <parameter name="TargetFolder">/</parameter>
+                    <parameter name="Recursive">false</parameter>
+                    <parameter name="ArchiveFolder">archive/feeds/google/us</parameter>
+                    <parameter name="NoFileFoundStatus">OK</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <rules>
+            <on-running runtime-threshold="60m" enabled="true">
+                <mark-job-as-hanging/>
+                <send-mail>
+                    <from>donotreply@demandware.net</from>
+                    <to>demo@company.com</to>
+                </send-mail>
+            </on-running>
+            <on-retry enabled="true">
+                <send-mail>
+                    <from>donotreply@demandware.net</from>
+                    <to>demo@company.com</to>
+                </send-mail>
+            </on-retry>
+            <on-exit status="ERROR" enabled="true">
+                <send-mail>
+                    <from>donotreply@demandware.net</from>
+                    <to>demo@company.com</to>
+                </send-mail>
+            </on-exit>
+        </rules>
+        <triggers>
+            <run-recurring enabled="false">
+                <recurrence>
+                    <date-from>2021-05-07Z</date-from>
+                    <start-time>10:14:26.000Z</start-time>
+                    <interval>1d</interval>
+                    <day-of-week>
+                        <weekday>Thursday</weekday>
+                        <weekday>Sunday</weekday>
+                        <weekday>Wednesday</weekday>
+                        <weekday>Saturday</weekday>
+                        <weekday>Monday</weekday>
+                        <weekday>Friday</weekday>
+                        <weekday>Tuesday</weekday>
+                    </day-of-week>
+                </recurrence>
+            </run-recurring>
+        </triggers>
+    </job>
+    <job job-id="AuthorizedDealersImport" priority="0">
+        <description/>
+        <parameters/>
+        <flow>
+            <context site-id="tnf-us"/>
+            <step step-id="DealersFeedDownload" type="custom.CSComponents.FtpDownload" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="ServiceID">download.mulesoft.sftp</parameter>
+                    <parameter name="FilePattern">*.*</parameter>
+                    <parameter name="SourceFolder">authorizeddealers/</parameter>
+                    <parameter name="TargetFolder">src/download/authorizeddealers</parameter>
+                    <parameter name="Recursive">false</parameter>
+                    <parameter name="DeleteRemoteFiles">true</parameter>
+                    <parameter name="NoFileFoundStatus">OK</parameter>
+                    <parameter name="IsDisabled">false</parameter>
+                </parameters>
+            </step>
+            <step step-id="DealersFeedImport" type="custom.AuthorizedDealer" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="SourceFolder">src/download/authorizeddealers</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <rules>
+            <on-running runtime-threshold="60m" enabled="true">
+                <mark-job-as-hanging/>
+                <send-mail>
+                    <from>noreply@salesforce.com</from>
+                    <to>demo@company.com</to>
+                </send-mail>
+            </on-running>
+            <on-exit status="ERROR" enabled="false">
+                <send-mail>
+                    <from>noreply@salesforce.com</from>
+                    <to>demo@company.com</to>
+                </send-mail>
+            </on-exit>
+        </rules>
+        <triggers>
+            <run-recurring enabled="false">
+                <recurrence>
+                    <date-from>2021-07-16Z</date-from>
+                    <start-time>00:22:10.000Z</start-time>
+                    <interval>24h</interval>
+                    <day-of-week>
+                        <weekday>Monday</weekday>
+                        <weekday>Friday</weekday>
+                        <weekday>Tuesday</weekday>
+                        <weekday>Wednesday</weekday>
+                        <weekday>Saturday</weekday>
+                        <weekday>Thursday</weekday>
+                        <weekday>Sunday</weekday>
+                    </day-of-week>
+                </recurrence>
+            </run-recurring>
+        </triggers>
+    </job>
+    <job job-id="Aptos_ExportPromotionsJSON" priority="0">
+        <description>Export Campaign/Promotions in APTOS JSON format</description>
+        <parameters/>
+        <flow>
+            <context site-id="pos"/>
+            <step step-id="ExportPromotions" type="ExportPromotions" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="ExportFile">export/tmp/ExportPromotions</parameter>
+                    <parameter name="OverwriteExportFile">true</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <flow>
+            <context site-id="pos"/>
+            <step step-id="ExportAptosPromotionsJson" type="custom.ExportAptosPromotions" enforce-restart="false">
+                <description>Export campaigns/promotions in APTOS JSON format.</description>
+                <parameters>
+                    <parameter name="TargetFolder">src/export/promotions</parameter>
+                    <parameter name="XmlPromotionsFile">src/export/tmp/ExportPromotions.xml</parameter>
+                    <parameter name="MinutesSinceLastModified">1440</parameter>
+                    <parameter name="MinutesToStartTime">0</parameter>
+                    <parameter name="EnabledCampaignsOnly">false</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <flow>
+            <context site-id="Sites"/>
+            <step step-id="UploadFileToSFTP" type="custom.CSComponents.FtpUpload" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="ServiceID">IPMS_AWS_SFTP_UPLOAD</parameter>
+                    <parameter name="KeyAlias">pos_sftp</parameter>
+                    <parameter name="SourceFolder">src/export/promotions</parameter>
+                    <parameter name="TargetFolder">promotions</parameter>
+                    <parameter name="Recursive">false</parameter>
+                    <parameter name="NoFileFoundStatus">OK</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <rules/>
+        <triggers>
+            <run-recurring enabled="true">
+                <recurrence>
+                    <date-from>2021-07-09Z</date-from>
+                    <start-time>15:11:44.000Z</start-time>
+                    <interval>12M</interval>
+                    <day-of-week/>
+                </recurrence>
+            </run-recurring>
+        </triggers>
+    </job>
+    <job job-id="AuthorizedDealer" priority="0">
+        <description/>
+        <parameters/>
+        <flow>
+            <context site-id="tnf-us"/>
+            <step step-id="AuthorizedDealer2" type="custom.AuthorizedDealer" enforce-restart="false">
+                <description/>
+                <parameters>
+                    <parameter name="SourceFolder">upload/authorizedDealer</parameter>
+                </parameters>
+            </step>
+        </flow>
+        <rules/>
+        <triggers>
+            <run-once enabled="false">
+                <date>2021-08-17Z</date>
+                <time>08:13:33.000Z</time>
+            </run-once>
+        </triggers>
+    </job>
+</jobs>
